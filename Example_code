@@ -1,0 +1,53 @@
+import folium
+from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
+
+# Initialize the geocoder
+geolocator = Nominatim(user_agent="my_map_app")
+geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+
+# Create a map centered on the United States
+us_map = folium.Map(location=[37.0902, -95.7129], zoom_start=5)
+
+# List of people with their names, marker colors, and locations
+people = [
+    {
+        'name': 'Person 1',
+        'color': 'red',
+        'locations': [
+            {'city': 'Birmingham', 'state': 'Alabama'},
+            {'city': 'Phoenix', 'state': 'Arizona'},
+            # Add more locations for Person 1
+        ]
+    },
+    {
+        'name': 'Person 2',
+        'color': 'blue',
+        'locations': [
+            {'city': 'San Diego', 'state': 'California'},
+            {'city': 'Denver', 'state': 'Colorado'},
+            # Add more locations for Person 2
+        ]
+    },
+    # Add more people here
+]
+
+# Add markers for each person
+for person in people:
+    color = person['color']
+    for loc in person['locations']:
+        full_address = f"{loc['city']}, {loc['state']}, USA"
+        location = geocode(full_address)
+        if location:
+            folium.Marker(
+                location=[location.latitude, location.longitude],
+                popup=f"{person['name']}: {loc['city']}, {loc['state']}",
+                icon=folium.Icon(color=color)
+            ).add_to(us_map)
+        else:
+            print(f"Could not geocode location: {full_address}")
+
+# Save the map to an HTML file
+us_map.save('us_map_with_people.html')
+
+print("Map has been created and saved to 'us_map_with_people.html'")
