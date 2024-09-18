@@ -1,53 +1,99 @@
-import folium
-from geopy.geocoders import Nominatim
-from geopy.extra.rate_limiter import RateLimiter
+<!DOCTYPE html>
+<html>
+<head>
+    <title>US Map with Markers</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-# Initialize the geocoder
-geolocator = Nominatim(user_agent="my_map_app")
-geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet/dist/leaflet.css"
+        integrity="sha256-Rksm4w+qGi/t+AAOD0rPsj6PxGq2iwOK70f+3GHP0LU="
+        crossorigin=""
+    />
 
-# Create a map centered on the United States
-us_map = folium.Map(location=[37.0902, -95.7129], zoom_start=5)
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
 
-# List of people with their names, marker colors, and locations
-people = [
-    {
-        'name': 'Person 1',
-        'color': 'red',
-        'locations': [
-            {'city': 'Birmingham', 'state': 'Alabama'},
-            {'city': 'Phoenix', 'state': 'Arizona'},
-            # Add more locations for Person 1
-        ]
-    },
-    {
-        'name': 'Person 2',
-        'color': 'blue',
-        'locations': [
-            {'city': 'San Diego', 'state': 'California'},
-            {'city': 'Denver', 'state': 'Colorado'},
-            # Add more locations for Person 2
-        ]
-    },
-    # Add more people here
-]
+<div id="map"></div>
 
-# Add markers for each person
-for person in people:
-    color = person['color']
-    for loc in person['locations']:
-        full_address = f"{loc['city']}, {loc['state']}, USA"
-        location = geocode(full_address)
-        if location:
-            folium.Marker(
-                location=[location.latitude, location.longitude],
-                popup=f"{person['name']}: {loc['city']}, {loc['state']}",
-                icon=folium.Icon(color=color)
-            ).add_to(us_map)
-        else:
-            print(f"Could not geocode location: {full_address}")
+<!-- Leaflet JS -->
+<script
+    src="https://unpkg.com/leaflet/dist/leaflet.js"
+    integrity="sha256-gZ7qmzJMZz2w3nGHTCgx7wMBKK99XbJDSPk8Zn0TU2M="
+    crossorigin=""
+></script>
 
-# Save the map to an HTML file
-us_map.save('us_map_with_people.html')
+<script>
+    // Initialize the map
+    var map = L.map('map').setView([37.8, -96], 4);
 
-print("Map has been created and saved to 'us_map_with_people.html'")
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19
+    }).addTo(map);
+
+    // List of locations with coordinates
+    var locations = [
+        {state: 'Alabama', city: 'Birmingham', lat: 33.5186, lon: -86.8104},
+        {state: 'Arizona', city: 'Tucson', lat: 32.2226, lon: -110.9747},
+        {state: 'Arizona', city: 'Phoenix', lat: 33.4484, lon: -112.0740},
+        {state: 'Arkansas', city: 'Little Rock', lat: 34.7465, lon: -92.2896},
+        {state: 'California', city: 'San Diego', lat: 32.7157, lon: -117.1611},
+        {state: 'Colorado', city: 'Denver', lat: 39.7392, lon: -104.9903},
+        {state: 'DC', city: 'District of Columbia', lat: 38.9072, lon: -77.0369},
+        {state: 'Delaware', city: 'Newark', lat: 39.6837, lon: -75.7497},
+        {state: 'Florida', city: 'Jacksonville', lat: 30.3322, lon: -81.6557},
+        {state: 'Florida', city: 'Miami', lat: 25.7617, lon: -80.1918},
+        {state: 'Florida', city: 'Tampa', lat: 27.9506, lon: -82.4572},
+        {state: 'Florida', city: 'Orlando', lat: 28.5383, lon: -81.3792},
+        {state: 'Georgia', city: 'Augusta', lat: 33.4735, lon: -82.0105},
+        {state: 'Louisiana', city: 'Baton Rouge', lat: 30.4515, lon: -91.1871},
+        {state: 'Maine', city: 'Portland', lat: 43.6591, lon: -70.2568},
+        {state: 'Missouri', city: 'Kansas City', lat: 39.0997, lon: -94.5786},
+        {state: 'Nevada', city: 'Las Vegas', lat: 36.1699, lon: -115.1398},
+        {state: 'New Jersey', city: 'Camden', lat: 39.9259, lon: -75.1196},
+        {state: 'New Mexico', city: 'Albuquerque', lat: 35.0844, lon: -106.6504},
+        {state: 'North Carolina', city: 'Chapel Hill', lat: 35.9132, lon: -79.0558},
+        {state: 'North Carolina', city: 'Charlotte', lat: 35.2271, lon: -80.8431},
+        {state: 'North Carolina', city: 'Greenville', lat: 35.6127, lon: -77.3664},
+        {state: 'North Carolina', city: 'Durham', lat: 35.9940, lon: -78.8986},
+        {state: 'Ohio', city: 'Cleveland', lat: 41.4993, lon: -81.6944},
+        {state: 'Pennsylvania', city: 'Pittsburgh', lat: 40.4406, lon: -79.9959},
+        {state: 'South Carolina', city: 'Columbia', lat: 34.0007, lon: -81.0348},
+        {state: 'Tennessee', city: 'Nashville', lat: 36.1627, lon: -86.7816},
+        {state: 'Tennessee', city: 'Chattanooga', lat: 35.0456, lon: -85.3097},
+        {state: 'Texas', city: 'Dallas', lat: 32.7767, lon: -96.7970},
+        {state: 'Texas', city: 'Houston', lat: 29.7604, lon: -95.3698},
+        {state: 'Texas', city: 'Fort Worth', lat: 32.7555, lon: -97.3308},
+        {state: 'Texas', city: 'Corpus Christi', lat: 27.8006, lon: -97.3964},
+        {state: 'Virginia', city: 'Richmond', lat: 37.5407, lon: -77.4360},
+        {state: 'Virginia', city: 'Norfolk', lat: 36.8508, lon: -76.2859}
+    ];
+
+    // Function to add markers to the map
+    function addMarkers() {
+        for (var i = 0; i < locations.length; i++) {
+            var loc = locations[i];
+            var marker = L.marker([loc.lat, loc.lon]).addTo(map);
+            marker.bindPopup('<strong>' + loc.city + ', ' + loc.state + '</strong>');
+        }
+    }
+
+    // Call the function to add markers
+    addMarkers();
+</script>
+
+</body>
+</html>
