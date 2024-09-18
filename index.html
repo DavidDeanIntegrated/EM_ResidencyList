@@ -138,6 +138,8 @@
 function addMarkers() {
     for (var i = 0; i < people.length; i++) {
         var person = people[i];
+        var color = person.color;
+        console.log('Adding markers for', person.name, 'with color', color);
         var locations = person.locations;
         for (var j = 0; j < locations.length; j++) {
             var loc = locations[j];
