@@ -102,25 +102,22 @@
     ];
 
     // Function to add markers to the map
-    function addMarkers() {
-        for (var i = 0; i < people.length; i++) {
-            var person = people[i];
-            var color = person.color;
-            var locations = person.locations;
-            for (var j = 0; j < locations.length; j++) {
-                var loc = locations[j];
-                var markerIcon = L.AwesomeMarkers.icon({
-                    icon: 'user',
-                    prefix: 'fa',
-                    markerColor: color,
-                });
-                var marker = L.marker([loc.lat, loc.lon], { icon: markerIcon }).addTo(map);
-                marker.bindPopup(
-                    '<strong>' + person.name + '</strong><br>' + loc.city + ', ' + loc.state
-                );
-            }
+    // Function to add markers to the map using default markers
+function addMarkers() {
+    for (var i = 0; i < people.length; i++) {
+        var person = people[i];
+        var locations = person.locations;
+        for (var j = 0; j < locations.length; j++) {
+            var loc = locations[j];
+            // Use default marker
+            var marker = L.marker([loc.lat, loc.lon]).addTo(map);
+            marker.bindPopup(
+                '<strong>' + person.name + '</strong><br>' + loc.city + ', ' + loc.state
+            );
         }
     }
+}
+
 
     // Call the function to add markers
     addMarkers();
