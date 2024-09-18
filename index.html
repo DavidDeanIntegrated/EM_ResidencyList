@@ -1,27 +1,13 @@
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title>US Map with Markers for Alex</title>
+    <title>US Map with Markers for Multiple People</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Leaflet CSS -->
-    <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet/dist/leaflet.css"
-    />
-
-    <!-- Leaflet Awesome Markers CSS -->
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css"
-    />
-
-    <!-- Font Awesome CSS -->
-    <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
-    />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 
     <style>
         body {
@@ -39,14 +25,7 @@
 <div id="map"></div>
 
 <!-- Leaflet JS -->
-<script
-    src="https://unpkg.com/leaflet/dist/leaflet.js"
-></script>
-
-<!-- Leaflet Awesome Markers JS -->
-<script
-    src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.js"
-></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 
 <script>
     // Initialize the map
@@ -57,7 +36,29 @@
         maxZoom: 19,
     }).addTo(map);
 
-    // List of people with their locations and marker colors
+    // Define custom icons for each color
+    var iconColors = ['red', 'blue', 'green', 'orange', 'purple', 'darkred', 'cadetblue', 'black'];
+    var icons = {};
+
+    // Function to create icons for each color
+    function createIcons() {
+        for (var i = 0; i < iconColors.length; i++) {
+            var color = iconColors[i];
+            icons[color] = new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-' + color + '.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+        }
+    }
+
+    // Create the icons
+    createIcons();
+
+    // List of people with their locations
     var people = [
         {
             name: 'Alex',
@@ -129,29 +130,76 @@
                 { state: 'Pennsylvania', city: 'Pittsburgh', lat: 40.4406, lon: -79.9959 },
                 { state: 'Illinois', city: 'Chicago', lat: 41.8781, lon: -87.6298 },
                 { state: 'Arkansas', city: 'Fayetteville', lat: 36.0822, lon: -94.1719 },
-           ],
+            ],
         },
+        // Add more people as needed
     ];
 
+    // Function to aggregate locations and combine names
+    function aggregateLocations() {
+        var locationMap = {};
+
+        // Iterate over each person
+        for (var i = 0; i < people.length; i++) {
+            var person = people[i];
+            var locations = person.locations;
+
+            // Iterate over each location of the person
+            for (var j = 0; j < locations.length; j++) {
+                var loc = locations[j];
+                var key = loc.lat + ',' + loc.lon; // Unique key for each location
+
+                if (!locationMap[key]) {
+                    // If location not in map, add it
+                    locationMap[key] = {
+                        lat: loc.lat,
+                        lon: loc.lon,
+                        city: loc.city,
+                        state: loc.state,
+                        people: [],
+                        colors: [],
+                    };
+                }
+                // Add the person's name and color to the location
+                locationMap[key].people.push(person.name);
+                if (locationMap[key].colors.indexOf(person.color) === -1) {
+                    locationMap[key].colors.push(person.color);
+                }
+            }
+        }
+        return locationMap;
+    }
+
     // Function to add markers to the map
-    // Function to add markers to the map using default markers
-function addMarkers() {
-    for (var i = 0; i < people.length; i++) {
-        var person = people[i];
-        var color = person.color;
-        console.log('Adding markers for', person.name, 'with color', color);
-        var locations = person.locations;
-        for (var j = 0; j < locations.length; j++) {
-            var loc = locations[j];
-            // Use default marker
-            var marker = L.marker([loc.lat, loc.lon]).addTo(map);
-            marker.bindPopup(
-                '<strong>' + person.name + '</strong><br>' + loc.city + ', ' + loc.state
-            );
+    function addMarkers() {
+        var aggregatedLocations = aggregateLocations();
+
+        // Iterate over each aggregated location
+        for (var key in aggregatedLocations) {
+            if (aggregatedLocations.hasOwnProperty(key)) {
+                var loc = aggregatedLocations[key];
+
+                // Determine the marker color
+                var markerColor;
+                if (loc.colors.length === 1) {
+                    // If only one color, use that color
+                    markerColor = loc.colors[0];
+                } else {
+                    // Multiple people with different colors, use 'black' or another color to represent multiple
+                    markerColor = 'black';
+                }
+
+                // Create a marker at the location with the determined color
+                var marker = L.marker([loc.lat, loc.lon], { icon: icons[markerColor] }).addTo(map);
+
+                // Create the popup content
+                var popupContent = '<strong>' + loc.city + ', ' + loc.state + '</strong><br/>' +
+                    'People: ' + loc.people.join(', ');
+
+                marker.bindPopup(popupContent);
+            }
         }
     }
-}
-
 
     // Call the function to add markers
     addMarkers();
