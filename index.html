@@ -1,213 +1,53 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Interactive US Map with Multiple People</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+import folium
+from geopy.geocoders import Nominatim
+from geopy.extra.rate_limiter import RateLimiter
 
-    <!-- Include Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+# Initialize the geocoder
+geolocator = Nominatim(user_agent="my_map_app")
+geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
 
-    <!-- Include Leaflet AwesomeMarkers CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css">
+# Create a map centered on the United States
+us_map = folium.Map(location=[37.0902, -95.7129], zoom_start=5)
 
-    <!-- Esri Leaflet Geocoder CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/esri-leaflet-geocoder/dist/esri-leaflet-geocoder.css" />
+# List of people with their names, marker colors, and locations
+people = [
+    {
+        'name': 'Person 1',
+        'color': 'red',
+        'locations': [
+            {'city': 'Birmingham', 'state': 'Alabama'},
+            {'city': 'Phoenix', 'state': 'Arizona'},
+            # Add more locations for Person 1
+        ]
+    },
+    {
+        'name': 'Person 2',
+        'color': 'blue',
+        'locations': [
+            {'city': 'San Diego', 'state': 'California'},
+            {'city': 'Denver', 'state': 'Colorado'},
+            # Add more locations for Person 2
+        ]
+    },
+    # Add more people here
+]
 
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-        }
-        #map {
-            height: 60vh;
-            width: 100%;
-        }
-        #inputContainer {
-            padding: 10px;
-        }
-        .person-section {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        .person-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .person-header h3 {
-            margin: 0;
-        }
-        textarea {
-            width: 100%;
-            height: 80px;
-            font-size: 14px;
-        }
-        button {
-            padding: 6px 12px;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-        .add-person-btn {
-            margin-bottom: 10px;
-        }
-    </style>
-</head>
-<body>
+# Add markers for each person
+for person in people:
+    color = person['color']
+    for loc in person['locations']:
+        full_address = f"{loc['city']}, {loc['state']}, USA"
+        location = geocode(full_address)
+        if location:
+            folium.Marker(
+                location=[location.latitude, location.longitude],
+                popup=f"{person['name']}: {loc['city']}, {loc['state']}",
+                icon=folium.Icon(color=color)
+            ).add_to(us_map)
+        else:
+            print(f"Could not geocode location: {full_address}")
 
-<div id="inputContainer">
-    <button class="add-person-btn" onclick="addPerson()">Add Person</button>
-    <div id="peopleContainer">
-        <!-- Individual person sections will be added here -->
-    </div>
-    <button onclick="updateMap()">Update Map</button>
-</div>
+# Save the map to an HTML file
+us_map.save('us_map_with_people.html')
 
-<div id="map"></div>
-
-<!-- Include Leaflet JavaScript -->
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<!-- Include Leaflet AwesomeMarkers JavaScript -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.js"></script>
-
-<!-- Include Esri Leaflet Geocoder JavaScript -->
-<script src="https://unpkg.com/esri-leaflet/dist/esri-leaflet.js"></script>
-<script src="https://unpkg.com/esri-leaflet-geocoder/dist/esri-leaflet-geocoder.js"></script>
-
-<script>
-    // Initialize the map
-    var map = L.map('map').setView([37.0902, -95.7129], 5);
-
-    // Add a tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    // Layer to hold all markers
-    var allMarkersLayer = L.layerGroup().addTo(map);
-
-    // Array to keep track of people and their markers
-    var peopleData = [];
-
-    // Colors for markers
-    var markerColors = ['red', 'blue', 'green', 'purple', 'orange', 'darkred', 'cadetblue', 'darkgreen', 'darkblue', 'darkpurple'];
-
-    // Function to add a new person input section
-    function addPerson() {
-        var personId = Date.now(); // Unique ID for the person
-
-        var personSection = document.createElement('div');
-        personSection.className = 'person-section';
-        personSection.dataset.personId = personId;
-
-        var personHeader = document.createElement('div');
-        personHeader.className = 'person-header';
-
-        var personNameInput = document.createElement('input');
-        personNameInput.type = 'text';
-        personNameInput.placeholder = 'Person\'s Name';
-        personNameInput.className = 'person-name';
-
-        var removeButton = document.createElement('button');
-        removeButton.textContent = 'Remove Person';
-        removeButton.onclick = function() {
-            removePerson(personId);
-        };
-
-        personHeader.appendChild(personNameInput);
-        personHeader.appendChild(removeButton);
-
-        var locationTextarea = document.createElement('textarea');
-        locationTextarea.placeholder = 'Enter cities and states, one per line...';
-        locationTextarea.className = 'person-locations';
-
-        personSection.appendChild(personHeader);
-        personSection.appendChild(locationTextarea);
-
-        document.getElementById('peopleContainer').appendChild(personSection);
-    }
-
-    // Function to remove a person's data and markers
-    function removePerson(personId) {
-        // Remove markers from the map
-        var person = peopleData.find(p => p.id === personId);
-        if (person && person.markersLayer) {
-            allMarkersLayer.removeLayer(person.markersLayer);
-        }
-        // Remove the person's data from peopleData array
-        peopleData = peopleData.filter(p => p.id !== personId);
-        // Remove the person's section from the DOM
-        var personSection = document.querySelector(`.person-section[data-person-id="${personId}"]`);
-        if (personSection) {
-            personSection.remove();
-        }
-    }
-
-    // Function to update the map with new locations
-    function updateMap() {
-        // Clear all markers
-        allMarkersLayer.clearLayers();
-
-        // Reset peopleData array
-        peopleData = [];
-
-        // Get all person sections
-        var personSections = document.querySelectorAll('.person-section');
-
-        personSections.forEach(function(section, index) {
-            var personId = parseInt(section.dataset.personId);
-            var personName = section.querySelector('.person-name').value || 'Person ' + (index + 1);
-            var locationsText = section.querySelector('.person-locations').value;
-
-            var locations = locationsText.split('\n').map(l => l.trim()).filter(l => l !== '');
-
-            // Create a layer group for this person's markers
-            var markersLayer = L.layerGroup();
-            allMarkersLayer.addLayer(markersLayer);
-
-            // Assign a color based on the index
-            var color = markerColors[index % markerColors.length];
-
-            // Geocode each location
-            locations.forEach(function(location) {
-                if (location !== '') {
-                    L.esri.Geocoding.geocode().text(location).run(function(err, results, response) {
-                        if (err) {
-                            console.error(err);
-                            return;
-                        }
-                        if (results.results.length > 0) {
-                            var result = results.results[0];
-                            // Customize the marker icon with the assigned color
-                            var markerIcon = L.AwesomeMarkers.icon({
-                                icon: 'user',
-                                markerColor: color,
-                                prefix: 'fa'
-                            });
-                            // Add a marker to the person's markers layer
-                            var marker = L.marker(result.latlng, { icon: markerIcon }).addTo(markersLayer);
-                            marker.bindPopup('<b>' + personName + '</b><br>' + location);
-                        } else {
-                            console.warn('No results found for: ' + location);
-                        }
-                    });
-                }
-            });
-
-            // Save this person's data and markers layer
-            peopleData.push({
-                id: personId,
-                name: personName,
-                markersLayer: markersLayer
-            });
-        });
-    }
-
-    // Initialize with one person section
-    addPerson();
-</script>
-
-</body>
-</html>
+print("Map has been created and saved to 'us_map_with_people.html'")
